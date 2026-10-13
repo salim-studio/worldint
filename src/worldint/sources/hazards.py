@@ -30,14 +30,28 @@ async def wildfires(limit: int = 20):
     except Exception:
         return r
 
-@tool("disaster_alerts", "GDACS alerts with severity + NASA EONET all-hazards")
-async def disaster_alerts(limit: int = 20):
+@tool("disaster_alerts", "GDACS top alerts (trimmed) + EONET all-hazards count")
+async def disaster_alerts(limit: int = 15):
     jobs = {
         "gdacs": F.get_json("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF",
             "gdacs", "wi:gdacs", 1800),
         "eonet": F.get_json("https://eonet.gsfc.nasa.gov/api/v3/events?limit=50&days=14", "eonet", "wi:eonet:all", 1800),
     }
-    return await F.gather_map(jobs)
+    r = await F.gather_map(jobs)
+    out = {}
+    try:
+        feats = r["gdacs"]["data"].get("features", [])[:limit]
+        out["gdacs_top"] = [{"type": f.get("properties", {}).get("eventtype"),
+                             "title": (f.get("properties", {}).get("name") or f.get("properties", {}).get("htmldescription", ""))[:140],
+                             "severity": (f.get("properties", {}).get("severitydata") or {}).get("severity")} for f in feats]
+        out["gdacs_count"] = len(r["gdacs"]["data"].get("features", []))
+    except Exception:
+        out["gdacs"] = r.get("gdacs", {}).get("error", "unavailable")
+    try:
+        out["eonet_count"] = len(r["eonet"]["data"]["events"])
+    except Exception:
+        pass
+    return out
 
 @tool("climate_anomalies", "Open-Meteo hourly temp/precip anomaly snapshot (no key)")
 async def climate_anomalies(lat: float = 30.0, lon: float = 31.0):
@@ -61,9 +75,18 @@ async def space_weather():
     }
     r = await F.gather_map(jobs)
     kp = None
-    try: kp = r["kp"]["data"][-1][1]
-    except Exception: pass
-    return {"kp_latest": kp, "detail": r}
+    try:
+        rows = r["kp"]["data"]
+        kp = rows[-1][1] if isinstance(rows[-1], list) else rows[-1].get("Kp")
+    except Exception:
+        pass
+    alerts = []
+    try:
+        for a in (r["alerts"]["data"] or [])[-5:]:
+            alerts.append({"message": (a.get("message") or "")[:200], "time": a.get("issue_datetime")})
+    except Exception:
+        pass
+    return {"kp_latest": kp, "recent_alerts": alerts}
 
 @tool("weather_alerts_us", "NWS active CAP alerts (US)")
 async def weather_alerts_us(state: str = ""):
@@ -100,7 +123,13 @@ async def volcanoes():
     names = re.findall(r"[A-Z][a-z]+(?: [A-Z][a-z]+)? (?:Volcano|Peak|Mountain)", t)[:15]
     return {"volcano_mentions": names, "note": "weekly curated; names extracted from USGS page", "source": "USGS/SI-GVP"}
 
-@tool("meteoalarm", "Meteoalarm EU severe weather (EMMA cap feed sample)")
+@tool("meteoalarm", "Meteoalarm EU warnings summary (France feed sample, free)")
 async def meteoalarm():
     r = await F.get_json("https://feeds.meteoalarm.org/api/v1/warnings/feeds-france", "meteoalarm", "wi:meteo:fr", 1800)
-    return r
+    try:
+        warns = r["data"].get("warnings", r["data"] if isinstance(r["data"], list) else [])
+        return {"count": len(warns), "top": [{"event": (w.get("event") or w.get("type") or "")[:80],
+                                              "level": w.get("severity") or w.get("level"),
+                                              "area": str(w.get("area") or w.get("region") or "")[:100]} for w in warns[:15]]}
+    except Exception:
+        return r

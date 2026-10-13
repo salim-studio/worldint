@@ -80,23 +80,35 @@ async def aoi_brief(name: str):
     for a in ain_[:10]:
         lines.append(f"- MIL {a.get('hex')}/{a.get('flight')} {cite('adsb.lol')}")
     lines.append(f"\nSources: {'; '.join(cites) or 'none in range'}")
-    return {"name": name, "markdown": "\n".join(lines), "counts": {"quakes_in": len(qin), "mil_in": len(ain_)}, "sources": cites}
+    ids = {"quakes": [(e.get("url") or e.get("place")) for e in qin],
+           "mil": [(a.get("hex") or a.get("flight")) for a in ain_]}
+    return {"name": name, "markdown": "\n".join(lines), "counts": {"quakes_in": len(qin), "mil_in": len(ain_)},
+            "ids": ids, "sources": cites}
 
-@tool("aoi_changes", "What entered/left an AOI since last sweep (first call = baseline)")
+@tool("aoi_changes", "What entered/left an AOI since last sweep (ID-based diff; first call = baseline)")
 async def aoi_changes(name: str):
+    import time
     b = await aoi_brief(name)
     if "error" in b:
         return b
-    key = b["markdown"]
+    cur = b.get("ids", {"quakes": [], "mil": []})
     c = _conn()
     row = c.execute("SELECT snap FROM aoi_snap WHERE name=?", (name,)).fetchone()
-    c.execute("INSERT OR REPLACE INTO aoi_snap VALUES(?,?)", (name, key))
-    c.commit(); c.close()
+    c.execute("INSERT OR REPLACE INTO aoi_snap VALUES(?,?)", (name, json.dumps({"ids": cur, "ts": time.time()})))
+    c.commit()
+    c.close()
     if not row:
         return {"name": name, "status": "baseline_set", "current_counts": b["counts"]}
-    changed = (row[0] != key)
-    return {"name": name, "changed": changed, "current_counts": b["counts"],
-            "previous_lines": len(row[0].splitlines()), "current_lines": len(key.splitlines())}
+    try:
+        prev = json.loads(row[0]).get("ids", {})
+    except Exception:
+        prev = {}
+    diff = {}
+    for dom in ("quakes", "mil"):
+        old, new = set(prev.get(dom, [])), set(cur.get(dom, []))
+        diff[dom] = {"entered": sorted(new - old)[:20], "left": sorted(old - new)[:20]}
+    changed = any(diff[d]["entered"] or diff[d]["left"] for d in diff)
+    return {"name": name, "changed": changed, "diff": diff, "current_counts": b["counts"]}
 
 @tool("aoi_digest", "One sweep across ALL AOIs")
 async def aoi_digest():

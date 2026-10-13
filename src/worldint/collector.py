@@ -1,40 +1,47 @@
-"""Parallel collector daemon: sweeps key domains + AOIs every N minutes."""
+"""Parallel collector daemon: sweeps zero-arg tools + AOIs on an interval."""
 from __future__ import annotations
-import asyncio, time
+import asyncio, inspect, time
 import click
 
-GROUPS = {"fast": ["macro_signals", "earthquakes", "military_flights", "news_feed"],
-          "all": None, "aoi": ["aoi_digest"]}
+FAST = ["world_brief", "macro_signals", "earthquakes", "wildfires", "news_feed", "theater_posture",
+        "cyber_threats", "space_weather", "disaster_alerts", "hotspot_escalation", "maritime_watch",
+        "crisis_watch", "aoi_digest", "status"]
+
+def _runnable():
+    from .core.registry import REG
+    out = []
+    for n, v in REG.items():
+        try:
+            ps = inspect.signature(v["fn"]).parameters
+            if all(p.default is not inspect._empty for p in ps.values()):
+                out.append(n)
+        except Exception:
+            pass
+    return out
 
 async def cycle(only=None):
     from .core.registry import REG
-    names = only or [n for n in REG if n not in ("aoi_define", "aoi_define_polygon", "aoi_define_corridor")]
-    jobs = {}
-    for n in names:
-        try:
-            jobs[n] = REG[n]["fn"]()
-        except Exception:
-            pass
     from .core import fetcher as F
-    r = await F.gather_map(jobs)
+    names = only or _runnable()
+    jobs = {n: REG[n]["fn"]() for n in names if n in REG}
+    r = await F.gather_map(jobs, limit=12)
     await F.aclose()
-    return {k: ("ok" if "error" not in (v or {}) else v.get("error")) for k, v in r.items()}
+    return {k: ("ok" if not (isinstance(v, dict) and v.get("error")) else str(v.get("error"))[:100])
+            for k, v in r.items()}
 
 @click.command()
 @click.option("--daemon/--once", default=False)
 @click.option("--interval", default=300)
-@click.option("--group", default="fast")
+@click.option("--group", default="fast", help="fast | all | aoi")
 def main(daemon, interval, group):
-    from .core.registry import REG
-    import sys
-    sys.path.insert(0, "src")
-    only = GROUPS.get(group)
+    only = {"fast": FAST, "all": None, "aoi": ["aoi_digest"]}.get(group, FAST)
     if group == "all":
         only = None
     async def once():
         return await cycle(only)
     if not daemon:
-        print(asyncio.run(once())); return
+        print(asyncio.run(once()))
+        return
     while True:
         print(asyncio.run(once()), flush=True)
         time.sleep(interval)

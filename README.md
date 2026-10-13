@@ -9,12 +9,12 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.0-22d3ee" alt="version"/>
   <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="python"/>
-  <img src="https://img.shields.io/badge/tools-52-orange" alt="tools"/>
+  <img src="https://img.shields.io/badge/tools-63-orange" alt="tools"/>
   <img src="https://img.shields.io/badge/apis-free%20%7C%20no%20keys-brightgreen" alt="free apis"/>
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license"/>
 </p>
 
-**worldint** is a fast, unified global-intelligence toolkit: a **52-tool MCP server**, a **dynamic CLI**, a **live SSE dashboard**, and a **collector daemon** — all powered exclusively by free public APIs. No paid keys, no Docker, no GPU, no heavyweight dependencies.
+**worldint** is a fast, unified global-intelligence toolkit: a **63-tool MCP server**, a **dynamic CLI**, a **live SSE dashboard**, and a **collector daemon** — all powered exclusively by free public APIs. No paid keys, no Docker, no GPU, no heavyweight dependencies.
 
 🌐 **Website:** https://salim-studio.github.io/worldint/
 
@@ -43,7 +43,7 @@ pip install -e ".[dashboard]" # live dashboard
 ## Usage
 
 ```bash
-worldint tools                                # list all 52 tools
+worldint tools                                # list all 63 tools
 worldint earthquakes min_mag=6 limit=3       # USGS live quakes
 worldint macro_signals                        # Fear&Greed + BTC + DXY + gold + 10Y in one call
 worldint forex_rates base=USD to=EUR,DZD,EGP
@@ -67,7 +67,7 @@ worldint-collector --daemon --interval 300    # background sweeps every 5 min
 { "mcpServers": { "worldint": { "command": "worldint-mcp" } } }
 ```
 
-## Tool coverage (52 tools, 30+ domains)
+## Tool coverage (63 tools, 30+ domains)
 
 Markets, crypto, macro composite, forex, commodities, central banks, FRED, World Bank, BTC technicals, SEC EDGAR, USGS earthquakes, EONET wildfires, GDACS alerts, Open-Meteo climate, NOAA space weather, NWS alerts, NHC cyclones, rocket launches, volcanoes, GDELT, ACLED, ReliefWeb, world RSS news, military flights (adsb.lol), 5-theater posture, FAA delays, NGA nav warnings, cloud status, BGP/RPKI, CISA KEV + URLhaus cyber, WHO outbreaks, arXiv + Hacker News, GitHub trending, UNHCR displacement, Polymarket, USAspending, world brief, strategic posture, country dossier, semantic search, store stats, daily digest, 7 AOI geofence tools, server status.
 

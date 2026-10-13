@@ -79,6 +79,32 @@ async def get_text(url, source, cache_key=None, ttl=600, params=None, retries=1)
     breaker.fail(source)
     return {"error": str(last), "source": source}
 
+async def post_json(url, payload, source, cache_key=None, ttl=600, retries=1):
+    """POST JSON (e.g. USAspending search). No cache by default for POST."""
+    if cache_key:
+        hit = cache.get(cache_key)
+        if hit is not None:
+            return hit
+    if not breaker.allow(source):
+        return {"error": f"circuit-open:{source}", "stale": cache.get_stale(cache_key) if cache_key else None}
+    c = await client()
+    last = None
+    async with _sem:
+        for i in range(retries + 1):
+            try:
+                r = await c.post(url, json=payload)
+                r.raise_for_status()
+                body = {"data": r.json(), "source": source, "url": url}
+                breaker.ok(source)
+                if cache_key:
+                    cache.set(cache_key, body, ttl)
+                return body
+            except Exception as e:
+                last = e
+                await asyncio.sleep(0.4 * (i + 1))
+    breaker.fail(source)
+    return {"error": str(last), "source": source, "url": url}
+
 async def gather_map(coros: dict, limit=16) -> dict:
     """Run {name: coro} concurrently, never raise."""
     sem = asyncio.Semaphore(limit)
