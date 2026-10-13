@@ -65,7 +65,7 @@ async def store_stats():
 @tool("status", "worldint health: cache + breakers + tools count")
 async def status():
     from ..core.registry import REG
-    return {"tools": len(REG), "cache": cache.stats(), "breakers": breaker.status(), "version": "1.0.0"}
+    return {"tools": len(REG), "cache": cache.stats(), "breakers": breaker.status(), "version": "1.1.0"}
 
 @tool("daily_digest", "Cited markdown morning brief")
 async def daily_digest():

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>worldint — Real-time global intelligence, minus the heavy stack</title>
-<meta name="description" content="worldint: a fast 63-tool MCP server, dynamic CLI, live dashboard and collector daemon — powered only by free public APIs.">
+<meta name="description" content="worldint: a fast 63-tool MCP server, dynamic CLI, live map dashboard and collector daemon — powered only by free public APIs.">
 <link rel="icon" href="logo.svg">
 <style>
 :root{--bg:#0b1220;--card:#111c33;--line:#233252;--txt:#e6edf3;--mut:#8b9bb4;--acc:#22d3ee}
@@ -31,7 +31,7 @@ footer{border-top:1px solid var(--line);padding:24px;text-align:center;color:#5b
   <h1>worldint</h1>
   <p class="tag">Real-time global intelligence, minus the heavy stack.</p>
   <div class="badges">
-    <img src="https://img.shields.io/badge/version-1.0.0-22d3ee" alt="version">
+    <img src="https://img.shields.io/badge/version-1.1.0-22d3ee" alt="version">
     <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="python">
     <img src="https://img.shields.io/badge/tools-63-orange" alt="tools">
     <img src="https://img.shields.io/badge/apis-free%20%7C%20no%20keys-brightgreen" alt="free apis">
@@ -46,12 +46,12 @@ footer{border-top:1px solid var(--line);padding:24px;text-align:center;color:#5b
 <section>
   <h2>Why worldint</h2>
   <div class="grid">
-    <div class="card"><h3>⚡ One shared engine</h3><p>Single async HTTP pool with keepalive + semaphore. A full world brief lands in seconds.</p></div>
-    <div class="card"><h3>🛡️ Resilient by design</h3><p>Two-level cache (memory + SQLite) with stale-fallback, plus per-source circuit breakers.</p></div>
-    <div class="card"><h3>🧠 Instant recall</h3><p>Built-in local keyword store. No Docker, no GPU, no embedding servers.</p></div>
-    <div class="card"><h3>🖥️ One CLI, 63 tools</h3><p><code>worldint &lt;tool&gt; key=value</code> auto-serves every registered tool.</p></div>
-    <div class="card"><h3>📡 MCP + dashboard</h3><p>Stdio MCP server for AI agents and a live SSE ops-center out of the box.</p></div>
-    <div class="card"><h3>📍 Watch your own area</h3><p>Circle, polygon &amp; corridor geofences with briefs and enter/leave change detection.</p></div>
+    <div class="card"><h3>🗺️ Map ops-center</h3><p>Live Leaflet dashboard: quake markers, signal cards, health panel — plus run any of the 63 tools from the browser.</p></div>
+    <div class="card"><h3>🔥 Escalation radar</h3><p>0–100 scores for 22 global hotspots from seismic proximity + headline velocity. Nuclear-test-site seismic watch included.</p></div>
+    <div class="card"><h3>📈 Market depth</h3><p>Yield curve + inversion flag, 11-sector heatmap, stablecoin pegs, Nasdaq earnings, composite company profiles.</p></div>
+    <div class="card"><h3>🚢 Chokepoint watch</h3><p>Hazard pressure on 9 strategic straits, dry-bulk stress proxy, live FAA delays, real SEC filings &amp; federal awards.</p></div>
+    <div class="card"><h3>📍 True geofences</h3><p>Circle, polygon &amp; corridor AOIs with ID-based enter/leave change detection across sweeps.</p></div>
+    <div class="card"><h3>⚡ Lean &amp; resilient</h3><p>One HTTP pool, two-level cache with stale-fallback, per-source circuit breakers. Installs in seconds.</p></div>
   </div>
 </section>
 <section>
@@ -59,30 +59,32 @@ footer{border-top:1px solid var(--line);padding:24px;text-align:center;color:#5b
 <pre><span class="cm"># core: httpx + click + feedparser only</span>
 pip install -e <code>git+https://github.com/salim-studio/worldint.git</code>
 pip install -e <code>".[mcp]"</code>        <span class="cm"># MCP stdio server</span>
-pip install -e <code>".[dashboard]"</code>  <span class="cm"># live dashboard</span></pre>
+pip install -e <code>".[dashboard]"</code>  <span class="cm"># map dashboard</span></pre>
 </section>
 <section>
   <h2>Usage</h2>
 <pre>worldint tools                          <span class="cm"># list all 63 tools</span>
-worldint earthquakes min_mag=6 limit=3  <span class="cm"># live USGS quakes</span>
-worldint macro_signals                  <span class="cm"># Fear&amp;Greed + BTC + DXY + gold + 10Y</span>
-worldint world_brief                     <span class="cm"># cited multi-domain brief</span>
+worldint hotspot_escalation             <span class="cm"># 22 hotspots scored</span>
+worldint yield_curve                    <span class="cm"># 3M/5Y/10Y/30Y + inversion flag</span>
+worldint maritime_watch                 <span class="cm"># pressure on 9 chokepoints</span>
+worldint nuclear_monitor                <span class="cm"># seismic check, 6 test sites</span>
 worldint aoi_define name=Cairo lat=30.04 lon=31.23 radius_km=150
-worldint aoi_brief name=Cairo           <span class="cm"># brief scoped to your area</span>
+worldint aoi_changes name=Cairo         <span class="cm"># what entered / left</span>
 worldint-mcp                            <span class="cm"># MCP server for Claude / Cursor</span>
-worldint-dashboard                      <span class="cm"># → http://localhost:8501</span></pre>
+worldint-dashboard                      <span class="cm"># map ops-center → :8501</span></pre>
 </section>
 <section>
   <h2>Coverage — 30+ domains</h2>
   <ul class="tools">
-    <li>Stock indices &amp; crypto</li><li>Macro composite</li><li>Forex &amp; commodities</li>
-    <li>Central banks, FRED, World Bank</li><li>BTC technicals</li><li>SEC EDGAR filings</li>
-    <li>USGS earthquakes</li><li>Wildfires &amp; GDACS alerts</li><li>Climate &amp; space weather</li>
-    <li>NWS alerts &amp; cyclones</li><li>Rocket launches &amp; volcanoes</li><li>GDELT &amp; ACLED</li>
-    <li>ReliefWeb crises</li><li>World RSS news</li><li>Military flights &amp; posture</li>
-    <li>FAA delays &amp; nav warnings</li><li>Cloud status &amp; BGP/RPKI</li><li>Cyber threats (CISA/URLhaus)</li>
-    <li>Disease outbreaks</li><li>AI papers &amp; Hacker News</li><li>GitHub trending</li>
-    <li>UNHCR displacement</li><li>Prediction markets</li><li>Strategic posture &amp; dossiers</li>
+    <li>Stock indices &amp; crypto</li><li>Yield curve &amp; sectors</li><li>Stablecoins &amp; earnings</li>
+    <li>Forex, commodities, shipping</li><li>Central banks, FRED, World Bank</li><li>BTC technicals &amp; company profiles</li>
+    <li>SEC EDGAR &amp; USAspending awards</li><li>USGS earthquakes + FAA delays</li><li>Wildfires &amp; GDACS alerts</li>
+    <li>Climate &amp; NOAA space weather</li><li>NWS alerts &amp; NHC cyclones</li><li>Launches &amp; volcanoes</li>
+    <li>GDELT &amp; world RSS news</li><li>Hotspot escalation (22)</li><li>Signal convergence zones</li>
+    <li>Nuclear test-site monitor</li><li>Military flights (OpenSky)</li><li>5-theater posture</li>
+    <li>Maritime chokepoint watch</li><li>Cloud status &amp; BGP/RPKI</li><li>Cyber (CISA KEV + SANS)</li>
+    <li>Disease outbreak watch</li><li>AI papers &amp; Hacker News</li><li>GitHub trending</li>
+    <li>Displacement &amp; sanctions watch</li><li>Polymarket &amp; elections</li><li>AOI geofences + digests</li>
   </ul>
 </section>
 </div>
