@@ -16,6 +16,8 @@
 
 **worldint** is a fast, unified global-intelligence toolkit: a **52-tool MCP server**, a **dynamic CLI**, a **live SSE dashboard**, and a **collector daemon** — all powered exclusively by free public APIs. No paid keys, no Docker, no GPU, no heavyweight dependencies.
 
+🌐 **Website:** https://salim-studio.github.io/worldint/
+
 ## Why worldint
 
 | Capability | How worldint does it |
