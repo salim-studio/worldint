@@ -1,0 +1,25 @@
+[project]
+name = "worldint"
+version = "1.0.0"
+description = "worldint: fast unified global-intelligence MCP server + CLI + dashboard (free public APIs, no keys)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = ["httpx>=0.27", "click>=8.1", "feedparser>=6.0"]
+[project.optional-dependencies]
+mcp = ["mcp>=1.8"]
+dashboard = ["starlette>=0.37", "uvicorn>=0.29"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+[project.scripts]
+worldint-mcp = "worldint.server:run"
+worldint = "worldint.cli:main"
+worldint-dashboard = "worldint.dashboard:run"
+worldint-collector = "worldint.collector:main"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[tool.hatch.build.targets.wheel]
+packages = ["src/worldint"]
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
