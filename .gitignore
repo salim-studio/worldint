@@ -8,5 +8,5 @@ htmlcov/
 build/
 dist/
 *.html
-!.gitignore
+!docs/*.html
 .cache/

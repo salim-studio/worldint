@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>worldint — Real-time global intelligence, minus the heavy stack</title>
+<meta name="description" content="worldint: a fast 52-tool MCP server, dynamic CLI, live dashboard and collector daemon — powered only by free public APIs.">
+<link rel="icon" href="logo.svg">
+<style>
+:root{--bg:#0b1220;--card:#111c33;--line:#233252;--txt:#e6edf3;--mut:#8b9bb4;--acc:#22d3ee}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+a{color:var(--acc);text-decoration:none}.wrap{max-width:1024px;margin:auto;padding:0 24px}
+header.hero{text-align:center;padding:72px 24px 48px;background:radial-gradient(600px 300px at 50% -50px,#123052,transparent)}
+header.hero img{width:110px}h1{font-size:52px;margin:16px 0 8px}.tag{color:var(--mut);font-size:19px;margin:0 0 20px}
+.badges img{margin:3px}.cta{margin-top:28px}.btn{display:inline-block;margin:6px;padding:13px 26px;border-radius:10px;font-weight:700;border:1px solid var(--acc)}
+.btn.solid{background:var(--acc);color:#04202a}.btn.ghost{color:var(--acc)}
+section{padding:44px 0}h2{font-size:28px;border-bottom:2px solid var(--acc);display:inline-block;padding-bottom:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.card h3{margin:0 0 8px;font-size:17px}.card p{margin:0;color:var(--mut);font-size:14px;line-height:1.6}
+pre{background:#070d18;border:1px solid var(--line);border-radius:12px;padding:18px;overflow-x:auto;font-size:14px;line-height:1.7}
+code{color:#a5f3fc}.cm{color:#5b6b86}
+.tools{columns:3 200px;font-size:14px;color:var(--mut)}.tools li{margin:4px 0;break-inside:avoid}
+footer{border-top:1px solid var(--line);padding:24px;text-align:center;color:#5b6b86;font-size:13px}
+@media(max-width:600px){h1{font-size:36px}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <img src="logo.svg" alt="worldint logo">
+  <h1>worldint</h1>
+  <p class="tag">Real-time global intelligence, minus the heavy stack.</p>
+  <div class="badges">
+    <img src="https://img.shields.io/badge/version-1.0.0-22d3ee" alt="version">
+    <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="python">
+    <img src="https://img.shields.io/badge/tools-52-orange" alt="tools">
+    <img src="https://img.shields.io/badge/apis-free%20%7C%20no%20keys-brightgreen" alt="free apis">
+    <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
+  </div>
+  <div class="cta">
+    <a class="btn solid" href="https://github.com/salim-studio/worldint">★ GitHub</a>
+    <a class="btn ghost" href="https://github.com/salim-studio/worldint#install">Get started</a>
+  </div>
+</header>
+<div class="wrap">
+<section>
+  <h2>Why worldint</h2>
+  <div class="grid">
+    <div class="card"><h3>⚡ One shared engine</h3><p>Single async HTTP pool with keepalive + semaphore. A full world brief lands in seconds.</p></div>
+    <div class="card"><h3>🛡️ Resilient by design</h3><p>Two-level cache (memory + SQLite) with stale-fallback, plus per-source circuit breakers.</p></div>
+    <div class="card"><h3>🧠 Instant recall</h3><p>Built-in local keyword store. No Docker, no GPU, no embedding servers.</p></div>
+    <div class="card"><h3>🖥️ One CLI, 52 tools</h3><p><code>worldint &lt;tool&gt; key=value</code> auto-serves every registered tool.</p></div>
+    <div class="card"><h3>📡 MCP + dashboard</h3><p>Stdio MCP server for AI agents and a live SSE ops-center out of the box.</p></div>
+    <div class="card"><h3>📍 Watch your own area</h3><p>Circle, polygon &amp; corridor geofences with briefs and enter/leave change detection.</p></div>
+  </div>
+</section>
+<section>
+  <h2>Install</h2>
+<pre><span class="cm"># core: httpx + click + feedparser only</span>
+pip install -e <code>git+https://github.com/salim-studio/worldint.git</code>
+pip install -e <code>".[mcp]"</code>        <span class="cm"># MCP stdio server</span>
+pip install -e <code>".[dashboard]"</code>  <span class="cm"># live dashboard</span></pre>
+</section>
+<section>
+  <h2>Usage</h2>
+<pre>worldint tools                          <span class="cm"># list all 52 tools</span>
+worldint earthquakes min_mag=6 limit=3  <span class="cm"># live USGS quakes</span>
+worldint macro_signals                  <span class="cm"># Fear&amp;Greed + BTC + DXY + gold + 10Y</span>
+worldint world_brief                     <span class="cm"># cited multi-domain brief</span>
+worldint aoi_define name=Cairo lat=30.04 lon=31.23 radius_km=150
+worldint aoi_brief name=Cairo           <span class="cm"># brief scoped to your area</span>
+worldint-mcp                            <span class="cm"># MCP server for Claude / Cursor</span>
+worldint-dashboard                      <span class="cm"># → http://localhost:8501</span></pre>
+</section>
+<section>
+  <h2>Coverage — 30+ domains</h2>
+  <ul class="tools">
+    <li>Stock indices &amp; crypto</li><li>Macro composite</li><li>Forex &amp; commodities</li>
+    <li>Central banks, FRED, World Bank</li><li>BTC technicals</li><li>SEC EDGAR filings</li>
+    <li>USGS earthquakes</li><li>Wildfires &amp; GDACS alerts</li><li>Climate &amp; space weather</li>
+    <li>NWS alerts &amp; cyclones</li><li>Rocket launches &amp; volcanoes</li><li>GDELT &amp; ACLED</li>
+    <li>ReliefWeb crises</li><li>World RSS news</li><li>Military flights &amp; posture</li>
+    <li>FAA delays &amp; nav warnings</li><li>Cloud status &amp; BGP/RPKI</li><li>Cyber threats (CISA/URLhaus)</li>
+    <li>Disease outbreaks</li><li>AI papers &amp; Hacker News</li><li>GitHub trending</li>
+    <li>UNHCR displacement</li><li>Prediction markets</li><li>Strategic posture &amp; dossiers</li>
+  </ul>
+</section>
+</div>
+<footer>© 2026 salim-slimani · MIT · <a href="https://github.com/salim-studio/worldint">github.com/salim-studio/worldint</a></footer>
+</body>
+</html>
