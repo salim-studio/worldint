@@ -1,51 +1,80 @@
-# 🌍 worldint
+<p align="center">
+  <img src="docs/logo.svg" width="120" alt="worldint logo"/>
+</p>
 
-**خليفة عملي وسريع** لمشروع `world-intel-mcp` — نفس الفكرة (استخبارات عالمية لحظية من APIs عامة مجانية)، لكن:
+<h1 align="center">worldint</h1>
 
-| الأصل | worldint (تحسينات) |
+<p align="center"><b>Real-time global intelligence, minus the heavy stack.</b></p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0.0-22d3ee" alt="version"/>
+  <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="python"/>
+  <img src="https://img.shields.io/badge/tools-52-orange" alt="tools"/>
+  <img src="https://img.shields.io/badge/apis-free%20%7C%20no%20keys-brightgreen" alt="free apis"/>
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="license"/>
+</p>
+
+**worldint** is a fast, unified global-intelligence toolkit: a **52-tool MCP server**, a **dynamic CLI**, a **live SSE dashboard**, and a **collector daemon** — all powered exclusively by free public APIs. No paid keys, no Docker, no GPU, no heavyweight dependencies.
+
+## Why worldint
+
+| Capability | How worldint does it |
 |---|---|
-| 139 أداة + تبعيات ثقيلة (Qdrant, FastEmbed, WeasyPrint) | ~40 أداة مركّزة تغطي نفس الـ30+ مجال، بدون تبعيات ثقيلة |
-| عميل HTTP لكل مصدر | **pool واحد** `httpx.AsyncClient` + semaphore + keepalive → أسرع ب much |
-| كاش بسيط | **كاش مزدوج** (ذاكرة LRU + SQLite WAL) + stale-fallback عند فشل الشبكة |
-| بحث دلالي يحتاج Docker+GPU | **بحث محلي فوري** (keyword-store في SQLite) + متوافق مع Qdrant اختياريًا |
-| تقارير PDF تحتاج pango | **تقارير HTML/Markdown** بصفر تبعيات |
-| CLI ضخم (88KB) | CLI واحد ديناميكي: `worldint <tool> k=v` يخدم كل الأدوات تلقائيًا |
-| Dashboard معقد | لوحة SSE خفيفة بملف واحد + دعم عربي RTL |
+| One shared HTTP engine | Single `httpx.AsyncClient` pool + semaphore + keepalive |
+| Never show stale UI as live | Two-level cache (in-memory LRU + SQLite WAL) with stale-fallback on outages |
+| Resilient sources | Per-source circuit breaker (3 failures → 5 min cooldown) |
+| Instant recall | Built-in local keyword store — zero servers, zero embeddings |
+| Zero-dependency reports | Single-file HTML / Markdown briefs |
+| One CLI for everything | `worldint <tool> key=value` auto-serves every registered tool |
+| One-call situational awareness | `world_brief` fetches 6 domains in a single parallel sweep |
 
-## التنصيب
+## Install
+
 ```bash
+git clone https://github.com/salim-studio/worldint.git
 cd worldint
-pip install -e .            # الأساس (httpx, click, feedparser فقط)
-pip install -e ".[mcp]"     # سيرفر MCP
-pip install -e ".[dashboard]" # اللوحة
+pip install -e .              # core: httpx, click, feedparser only
+pip install -e ".[mcp]"       # MCP stdio server
+pip install -e ".[dashboard]" # live dashboard
 ```
 
-## الاستعمال
+## Usage
+
 ```bash
-worldint tools
-worldint earthquakes min_mag=5 limit=5
-worldint macro_signals
-worldint forex_rates base=USD to=EUR,AED,EGP
-worldint world_brief
-worldint brief --lang ar
-worldint aoi_define name=Cairo lat=30.04 lon=31.23 radius_km=80
-worldint aoi_brief name=Cairo
-worldint search "earthquake Taiwan"
-worldint report -o brief.html
-worldint status
+worldint tools                                # list all 52 tools
+worldint earthquakes min_mag=6 limit=3       # USGS live quakes
+worldint macro_signals                        # Fear&Greed + BTC + DXY + gold + 10Y in one call
+worldint forex_rates base=USD to=EUR,DZD,EGP
+worldint world_brief                          # cited multi-domain brief
+worldint brief --lang en                      # morning digest (en/ar)
+worldint aoi_define name=Cairo lat=30.04 lon=31.23 radius_km=150
+worldint aoi_brief name=Cairo                 # cited brief scoped to your area
+worldint search "earthquake Taiwan"           # instant local search
+worldint report -o brief.html                 # standalone HTML report
+worldint status                               # cache + breaker + tool health
 
-# MCP (Claude/Cursor): worldint-mcp  (stdio)
-# اللوحة: worldint-dashboard  (http://localhost:8501)
-# الجامع: worldint-collector --once  |  --daemon --interval 300
+worldint-mcp                                  # MCP stdio server (Claude / Cursor / Copilot)
+worldint-dashboard                            # live ops dashboard → http://localhost:8501
+worldint-collector --once                     # single collection sweep
+worldint-collector --daemon --interval 300    # background sweeps every 5 min
 ```
 
-## الأدوات (~40)
-أسواق، كريبتو، ماكرو، فوركس، سلع، مركزي، FRED، بنك دولي، BTC-technicals، زلازل USGS، حرائق EONET، كوارث GDACS، مناخ Open-Meteo، طقس فضائي NOAA، NWS، أعاصير NHC، إطلاق صواريخ، براكين، GDELT، ACLED، ReliefWeb، أخبار RSS، طيران عسكري adsb.lol، مسارح 5، تأخير FAA، ملاحة NGA، حالة السحابة، BGP/RPKI، سيبر CISA+URLhaus، أوبئة WHO، ذكاء اصطناعي arXiv+HN، غيتهب، نزوح UNHCR، Polymarket، SEC EDGAR، موجز عالمي، وضع استراتيجي، ملف دولة، بحث دلالي، AOI ×7، تقرير يومي، حالة السيرفر.
+### MCP clients
 
-## السرعة
-- تجميع متوازي `asyncio.gather` + حد 16 اتصالًا.
-- `world_brief` يجلب 6 مجالات في **طلب واحد متوازٍ** بدل التسلسل.
-- استيرادات كسولة داخل الدوال — بدء التشغيل < 300ms.
-- بدون Qdrant/FastEmbed/WeasyPrint → تنصيب < 30 ثانية.
+```json
+{ "mcpServers": { "worldint": { "command": "worldint-mcp" } } }
+```
 
-MIT — مستوحى من marc-shade/world-intel-mcp، تنفيذ أصلي مستقل.
+## Tool coverage (52 tools, 30+ domains)
+
+Markets, crypto, macro composite, forex, commodities, central banks, FRED, World Bank, BTC technicals, SEC EDGAR, USGS earthquakes, EONET wildfires, GDACS alerts, Open-Meteo climate, NOAA space weather, NWS alerts, NHC cyclones, rocket launches, volcanoes, GDELT, ACLED, ReliefWeb, world RSS news, military flights (adsb.lol), 5-theater posture, FAA delays, NGA nav warnings, cloud status, BGP/RPKI, CISA KEV + URLhaus cyber, WHO outbreaks, arXiv + Hacker News, GitHub trending, UNHCR displacement, Polymarket, USAspending, world brief, strategic posture, country dossier, semantic search, store stats, daily digest, 7 AOI geofence tools, server status.
+
+## Performance
+
+- Parallel `asyncio.gather` sweeps (16 concurrent connections) — a full world brief in seconds.
+- Lazy imports inside tool functions — CLI startup under 300 ms.
+- Install in under 30 seconds: three small core dependencies.
+
+## License
+
+MIT — © 2026 salim-slimani. See [LICENSE](LICENSE).

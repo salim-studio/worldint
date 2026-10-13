@@ -40,8 +40,8 @@ class DynGroup(click.Group):
 @click.pass_context
 def main(ctx):
     if ctx.invoked_subcommand is None:
-        click.echo("worldint — أدوات الاستخبارات العالمية السريعة\ntools: " + ", ".join(sorted(REG))[:1500])
-        click.echo("\nاستعمال: worldint <tool> [k=v ...]  |  worldint tools  |  worldint brief")
+        click.echo("worldint — fast global-intelligence toolkit\ntools: " + ", ".join(sorted(REG))[:1500])
+        click.echo("\nUsage: worldint <tool> [k=v ...]  |  worldint tools  |  worldint brief")
 
 @main.command("tools")
 def _tools():
@@ -49,10 +49,9 @@ def _tools():
         click.echo(f"{k:22s} {REG[k]['desc'][:90]}")
 
 @main.command("brief")
-@click.option("--lang", default="ar")
-def _brief(lang):
-    from .sources.synth import world_brief, daily_digest
-    r = asyncio.run(daily_digest(lang) if lang == "ar" else world_brief())
+def _brief():
+    from .sources.synth import daily_digest
+    r = asyncio.run(daily_digest())
     click.echo(r.get("markdown", r))
 
 @main.command("report")

@@ -67,9 +67,7 @@ async def status():
     from ..core.registry import REG
     return {"tools": len(REG), "cache": cache.stats(), "breakers": breaker.status(), "version": "1.0.0"}
 
-@tool("daily_digest", "Cited markdown morning brief (AR/EN)")
-async def daily_digest(lang: str = "ar"):
+@tool("daily_digest", "Cited markdown morning brief")
+async def daily_digest():
     b = await world_brief()
-    if lang == "ar":
-        return {"markdown": "# الموجز اليومي (worldint)\n\n" + b["markdown"] + "\n\n_مصادر مجانية عامة، بدون مفاتيح مدفوعة._"}
-    return b
+    return {"markdown": "# worldint Daily Digest\n\n" + b["markdown"] + "\n\n_Free public sources, no paid keys._"}
