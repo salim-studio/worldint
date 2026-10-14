@@ -58,16 +58,22 @@ footer{border-top:1px solid var(--line);padding:24px;text-align:center;color:#5b
   <div id="map"></div>
   <div class="mapbar">
     <label><input type="checkbox" id="lQ" checked> Quakes</label>
+    <label><input type="checkbox" id="lM"> Major</label>
+    <label><input type="checkbox" id="lG" checked> GDACS</label>
     <label><input type="checkbox" id="lF" checked> Wildfires</label>
     <label><input type="checkbox" id="lV" checked> Volcanoes</label>
+    <label><input type="checkbox" id="lFl"> Floods</label>
+    <label><input type="checkbox" id="lL"> Landslides</label>
     <label><input type="checkbox" id="lS"> Storms</label>
     <label><input type="checkbox" id="lH" checked> Hotspots</label>
     <label><input type="checkbox" id="lC"> Chokepoints</label>
+    <label><input type="checkbox" id="lN"> Nuclear sites</label>
     <select id="minmag"><option value="0">All magnitudes</option><option value="5">M5+</option><option value="6">M6+</option></select>
     <button onclick="loadAll()">⟳ Refresh</button>
   </div>
   <div id="mapstats"></div>
-  <p class="mapnote">Sources: USGS (quakes 7d) · NASA EONET (fires/volcanoes/storms 30d) · hotspots &amp; chokepoints: worldint curated · auto-refreshes hourly</p>
+  <div class="stat" id="spacewx" style="margin-top:10px">☀️ Space weather: loading…</div>
+  <p class="mapnote">🔴 M6+ · 🟠 M5+ · 🟡 M4.5+ · 🌊 tsunami flag · GDACS red/orange/green = severity · Sources: USGS · GDACS · NASA EONET · NOAA SWPC · worldint curated overlays · auto-refreshes hourly</p>
 </section>
 <section>
   <h2>Why worldint</h2>
@@ -119,20 +125,24 @@ worldint-dashboard                      <span class="cm"># map ops-center → :8
 <script>
 const map = L.map('map').setView([25, 15], 2);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 12, attribution: '© OpenStreetMap · USGS · NASA EONET'}).addTo(map);
-const G = {q:L.layerGroup().addTo(map), f:L.layerGroup().addTo(map), v:L.layerGroup().addTo(map),
-           s:L.layerGroup(), h:L.layerGroup().addTo(map), c:L.layerGroup()};
+const G = {q:L.layerGroup().addTo(map), m:L.layerGroup(), gd:L.layerGroup().addTo(map),
+           f:L.layerGroup().addTo(map), v:L.layerGroup().addTo(map), fl:L.layerGroup(), l:L.layerGroup(),
+           s:L.layerGroup(), h:L.layerGroup().addTo(map), c:L.layerGroup(), n:L.layerGroup()};
+const LAYERS = [['lQ','q'],['lM','m'],['lG','gd'],['lF','f'],['lV','v'],['lFl','fl'],['lL','l'],['lS','s'],['lH','h'],['lC','c'],['lN','n']];
 const HOTSPOTS = [["Taiwan Strait",24.5,119.5],["South China Sea",15,114],["Korean DMZ",38.3,127.2],["Kashmir LoC",34.5,76],["E. Ukraine",48.5,38],["Gaza",31.5,34.3],["S. Lebanon",33.2,35.5],["N. Syria",36.5,38],["C. Iraq",33.3,44.3],["Yemen",15.5,45],["Bab el-Mandeb",12.5,43.5],["Hormuz",26.5,56.5],["Khartoum",15.5,32.5],["Sahel",16.3,0],["Tripoli",32.9,13.2],["Kosovo",42.6,21],["Transnistria",47.3,29.3],["S. Caucasus",40.3,45],["Myanmar",21,96],["E. DRC",-1.7,29.2],["Haiti",18.5,-72.3],["W. Sahara",24,-13]];
 const CHOKES = [["Hormuz",26.5,56.3],["Malacca",2.5,100.5],["Bab el-Mandeb",12.6,43.4],["Suez S.",29.9,32.55],["Panama",8.9,-79.5],["Gibraltar",35.97,-5.6],["Taiwan Str.",24.5,119.5],["Bosphorus",41.1,29.05],["Danish Str.",55.5,11]];
 function qc(m){return m>=6?'#ef4444':m>=5?'#f97316':'#eab308';}
 function sync(){
-  [['lQ','q'],['lF','f'],['lV','v'],['lS','s'],['lH','h'],['lC','c']].forEach(([id,g])=>{
+  LAYERS.forEach(([id,g])=>{
     const on = document.getElementById(id).checked;
     if(on && !map.hasLayer(G[g])) G[g].addTo(map);
     if(!on && map.hasLayer(G[g])) map.removeLayer(G[g]);
   });
-  loadAll(true);
+  loadAll();
 }
-['lQ','lF','lV','lS','lH','lC','minmag'].forEach(id=>document.getElementById(id).addEventListener('change',sync));
+LAYERS.map(x=>x[0]).concat(['minmag']).forEach(id=>document.getElementById(id).addEventListener('change',sync));
+const NUCLEAR = [["Nevada NNSS",37.1,-116.05],["Novaya Zemlya",73.5,54.7],["Punggye-ri (KP)",41.28,129.08],["Lop Nur",41.6,88.4],["Semipalatinsk",50.4,77.8],["Mururoa",-21.8,-138.9]];
+NUCLEAR.forEach(([nm,la,lo])=>L.circleMarker([la,lo],{radius:7,color:'#e879f9',weight:2,fillOpacity:.3}).bindTooltip('☢️ '+nm+' test site').addTo(G.n));
 HOTSPOTS.forEach(([n,la,lo])=>L.circleMarker([la,lo],{radius:5,color:'#22d3ee',weight:2,fillOpacity:.35}).bindTooltip('⚠ '+n).addTo(G.h));
 CHOKES.forEach(([n,la,lo])=>L.marker([la,lo]).bindTooltip('🚢 '+n+' chokepoint').addTo(G.c));
 async function eonet(cat){
@@ -142,21 +152,49 @@ async function eonet(cat){
 function ecoords(e){
   try{const c=(e.geometry||[])[0].coordinates;return Array.isArray(c[0])?[c[0][1],c[0][0]]:[c[1],c[0]];}catch(_){return null;}
 }
-async function loadAll(light){
+async function loadAll(){
   const mm = parseFloat(document.getElementById('minmag').value);
   const stats = {};
-  try{
-    const q = await (await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson')).json();
-    G.q.clearLayers(); let n=0, mx=0;
+  async function quakeFeed(url, group, onlyMajor){
+    const q = await (await fetch(url)).json();
+    G[group].clearLayers(); let n=0, mx=0, tsu=0;
     q.features.forEach(f=>{
       const [lo,la,de]=f.geometry.coordinates, m=f.properties.mag||0;
       if(m<mm) return; n++; mx=Math.max(mx,m);
-      L.circleMarker([la,lo],{radius:3+m,color:qc(m),weight:2,fillOpacity:.55})
-       .bindPopup(`<b>M${m} — ${f.properties.place}</b><br>Depth: ${de} km<br>${new Date(f.properties.time).toUTCString()}<br><a href="${f.properties.url}">USGS event</a>`).addTo(G.q);
+      const t = f.properties.tsunami===1; if(t) tsu++;
+      L.circleMarker([la,lo],{radius:3+m,color:onlyMajor?'#ef4444':qc(m),weight:t?4:2,dashArray:t?'4 2':null,fillOpacity:.55})
+       .bindPopup(`<b>M${m} — ${f.properties.place}</b>${t?'<br>🌊 <b>TSUNAMI flag</b>':''}<br>Depth: ${de} km<br>${new Date(f.properties.time).toUTCString()}<br><a href="${f.properties.url}">USGS event</a>`).addTo(G[group]);
     });
-    stats.quakes = `${n} shown · strongest M${mx}`;
-  }catch(e){stats.quakes='feed error';}
-  const cats = [['wildfires','f','🔥','#f97316'],['volcanoes','v','🌋','#ef4444'],['severeStorms','s','🌀','#38bdf8']];
+    return `${n} shown · M${mx}` + (tsu?` · 🌊${tsu}`:'');
+  }
+  try{ stats.quakes = await quakeFeed('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson','q',false); }
+  catch(e){ stats.quakes='feed error'; }
+  try{ stats.major = await quakeFeed('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson','m',true); }
+  catch(e){ stats.major='feed error'; }
+  try{
+    const g = await (await fetch('https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF')).json();
+    G.gd.clearLayers(); const feats = g.features||[];
+    feats.slice(0,60).forEach(f=>{
+      const p = f.properties||{}, gm = f.geometry||{};
+      const co = gm.coordinates; if(!co) return;
+      const sev = JSON.stringify(p.severitydata||p.severity||'').toLowerCase();
+      const col = /red|high|severe/.test(sev)?'#ef4444':/orange|moderate/.test(sev)?'#f97316':'#22c55e';
+      const title = (p.name||p.eventtype||'event') + ' · ' + (p.eventtype||'');
+      const desc = String(p.htmldescription||p.description||'').replace(/<[^>]*>/g,'').slice(0,160);
+      L.circleMarker([co[1],co[0]],{radius:6,color:col,weight:2,fillOpacity:.5})
+       .bindPopup(`<b>${title}</b><br>${desc}<br><a href="${p.url||p.link||'https://www.gdacs.org'}">GDACS</a>`).addTo(G.gd);
+    });
+    stats.gdacs = feats.length+' alerts';
+  }catch(e){ stats.gdacs='feed error'; }
+  try{
+    const k = await (await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json')).json();
+    const rows = Array.isArray(k)?k:(k.data||[]);
+    const last = rows[rows.length-1];
+    const kp = parseFloat(Array.isArray(last)?last[1]:(last.Kp??last.kp));
+    const gscale = kp>=9?'G5 extreme':kp>=8?'G4 severe':kp>=7?'G3 strong':kp>=6?'G2 moderate':kp>=5?'G1 minor':'quiet';
+    document.getElementById('spacewx').innerHTML = `☀️ Space weather: Kp <b>${kp}</b> (${gscale}) · source: NOAA SWPC`;
+  }catch(e){ document.getElementById('spacewx').textContent = '☀️ Space weather: feed unavailable'; }
+  const cats = [['wildfires','f','🔥','#f97316'],['volcanoes','v','🌋','#ef4444'],['severeStorms','s','🌀','#38bdf8'],['floods','fl','🌊','#60a5fa'],['landslides','l','⛰️','#a78bfa']];
   await Promise.all(cats.map(async ([cat,g,ic,col])=>{
     try{
       const ev = await eonet(cat); G[g].clearLayers();
@@ -169,10 +207,15 @@ async function loadAll(light){
   stats.hotspots = HOTSPOTS.length+' tracked';
   document.getElementById('mapstats').innerHTML =
     `<div class="stat">🫨 Quakes <b>${stats.quakes||'—'}</b></div>`+
+    `<div class="stat">❗ Major <b>${stats.major||'—'}</b></div>`+
+    `<div class="stat">🚨 GDACS <b>${stats.gdacs||'—'}</b></div>`+
     `<div class="stat">🔥 Fires <b>${stats.wildfires||'—'}</b></div>`+
     `<div class="stat">🌋 Volcanoes <b>${stats.volcanoes||'—'}</b></div>`+
+    `<div class="stat">🌊 Floods <b>${stats.floods||'—'}</b></div>`+
+    `<div class="stat">⛰️ Slides <b>${stats.landslides||'—'}</b></div>`+
     `<div class="stat">🌀 Storms <b>${stats.severeStorms||'—'}</b></div>`+
-    `<div class="stat">⚠ Hotspots <b>${stats.hotspots}</b></div>`;
+    `<div class="stat">⚠ Hotspots <b>${stats.hotspots}</b></div>`+
+    `<div class="stat">☢️ Nuclear <b>${NUCLEAR.length} sites</b></div>`;
 }
 loadAll(); setInterval(loadAll, 3600000);
 </script>
