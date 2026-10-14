@@ -60,6 +60,7 @@ tools();tick();setInterval(tick,60000);
 </script></body></html>"""
 
 def run(port: int = 8501):
+    from . import tools as _all_tools  # noqa: register every tool before serving
     try:
         from starlette.applications import Starlette
         from starlette.responses import HTMLResponse, JSONResponse

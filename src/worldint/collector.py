@@ -2,6 +2,7 @@
 from __future__ import annotations
 import asyncio, inspect, time
 import click
+from . import tools as _all_tools  # noqa: register every tool so _runnable() sees them
 
 FAST = ["world_brief", "macro_signals", "earthquakes", "wildfires", "news_feed", "theater_posture",
         "cyber_threats", "space_weather", "disaster_alerts", "hotspot_escalation", "maritime_watch",
