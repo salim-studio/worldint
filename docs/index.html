@@ -6,6 +6,7 @@
 <title>worldint — Real-time global intelligence, minus the heavy stack</title>
 <meta name="description" content="worldint: a fast 63-tool MCP server, dynamic CLI, live map dashboard and collector daemon — powered only by free public APIs.">
 <link rel="icon" href="logo.svg">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--bg:#0b1220;--card:#111c33;--line:#233252;--txt:#e6edf3;--mut:#8b9bb4;--acc:#22d3ee}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt)}
@@ -22,6 +23,8 @@ pre{background:#070d18;border:1px solid var(--line);border-radius:12px;padding:1
 code{color:#a5f3fc}.cm{color:#5b6b86}
 .tools{columns:3 200px;font-size:14px;color:var(--mut)}.tools li{margin:4px 0;break-inside:avoid}
 footer{border-top:1px solid var(--line);padding:24px;text-align:center;color:#5b6b86;font-size:13px}
+#map{height:440px;border-radius:14px;border:1px solid var(--line)}
+.mapnote{color:var(--mut);font-size:13px;margin-top:8px}
 @media(max-width:600px){h1{font-size:36px}}
 </style>
 </head>
@@ -43,6 +46,11 @@ footer{border-top:1px solid var(--line);padding:24px;text-align:center;color:#5b
   </div>
 </header>
 <div class="wrap">
+<section>
+  <h2>Live earthquake map</h2>
+  <div id="map"></div>
+  <p class="mapnote">M4.5+ earthquakes, past 7 days · <span id="qcount">loading…</span> · source: USGS · auto-refreshes hourly</p>
+</section>
 <section>
   <h2>Why worldint</h2>
   <div class="grid">
@@ -89,5 +97,27 @@ worldint-dashboard                      <span class="cm"># map ops-center → :8
 </section>
 </div>
 <footer>© 2026 salim-slimani · MIT · <a href="https://github.com/salim-studio/worldint">github.com/salim-studio/worldint</a></footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map').setView([25, 15], 2);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 12, attribution: '© OpenStreetMap · USGS'}).addTo(map);
+let layer = L.layerGroup().addTo(map);
+function color(m){return m>=6?'#ef4444':m>=5?'#f97316':'#eab308';}
+async function loadQuakes(){
+  try{
+    const r = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson');
+    const j = await r.json();
+    layer.clearLayers();
+    j.features.forEach(f=>{
+      const [lon,lat,dep] = f.geometry.coordinates, m = f.properties.mag||0;
+      L.circleMarker([lat,lon],{radius:3+m,color:color(m),weight:2,fillOpacity:.55})
+       .bindPopup(`<b>M${m} — ${f.properties.place}</b><br>Depth: ${dep} km<br>${new Date(f.properties.time).toUTCString()}<br><a href="${f.properties.url}">USGS event page</a>`)
+       .addTo(layer);
+    });
+    document.getElementById('qcount').textContent = j.features.length + ' events shown';
+  }catch(e){document.getElementById('qcount').textContent = 'feed unavailable — try again later';}
+}
+loadQuakes(); setInterval(loadQuakes, 3600000);
+</script>
 </body>
 </html>
